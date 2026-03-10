@@ -1,0 +1,13 @@
+torch
+torchvision
+torchaudio
+transformers
+peft
+trl
+bitsandbytes
+accelerate
+datasets
+wandb
+spacy
+openai
+python-dotenv

@@ -1,0 +1,8 @@
+.venv/
+.env
+
+models/
+data/
+wandb/
+
+!results/*.png
