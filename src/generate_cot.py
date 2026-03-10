@@ -9,18 +9,15 @@ from datasets import load_dataset
 from huggingface_hub import login
 from dotenv import load_dotenv
 
-# 1. Setup Environment
 load_dotenv()
 OR_KEY = os.getenv("OPEN_ROUTER_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 MODEL_NAME = "arcee-ai/trinity-large-preview:free"
 OUTPUT_FILE = "data/silver_cot/raw_reasoning.jsonl"
 
-# Authenticate Hugging Face
 if HF_TOKEN:
     login(token=HF_TOKEN)
 
-# Thread-safe file writing
 file_lock = Lock()
 
 def format_prompt(row):
@@ -54,7 +51,6 @@ def generate_reasoning(row, idx):
     }
 
     try:
-        # Increased timeout to 120s because 4 parallel 400B requests can be slow
         response = requests.post(
             "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
@@ -74,7 +70,6 @@ def generate_reasoning(row, idx):
             "reasoning_details": message.get('reasoning_details'),
         }
 
-        # Lock file for writing to prevent JSON corruption
         with file_lock:
             with open(OUTPUT_FILE, "a") as f:
                 f.write(json.dumps(result) + "\n")
@@ -85,7 +80,6 @@ def generate_reasoning(row, idx):
         return f"Error on {idx}: {str(e)}"
 
 def main():
-    # Ensure directory exists
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
 
     print("Loading dataset...")
@@ -95,13 +89,11 @@ def main():
     subset_size = 3000
     subset = ds.select(range(subset_size))
 
-    print(f"Starting parallel generation for {subset_size} samples using 4 threads...")
+    print(f"Starting parallel generation for {subset_size} samples using 8 threads...")
 
     start_time = time.time()
 
-    # Use ThreadPoolExecutor for concurrent API calls
     with ThreadPoolExecutor(max_workers=8) as executor:
-        # Mapping row and index to the generator function
         futures = [executor.submit(generate_reasoning, row, i) for i, row in enumerate(subset)]
 
         for i, future in enumerate(as_completed(futures)):

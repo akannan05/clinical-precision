@@ -4,7 +4,6 @@ import os
 import spacy
 from collections import Counter
 
-# Load the medical NER model (Make sure you ran: pip install en_core_sci_md)
 print("Loading Medical NER (ScispaCy)...")
 try:
     nlp = spacy.load("en_core_sci_md")
@@ -20,7 +19,7 @@ class CurationStats:
 
     def print_report(self):
         print("\n" + "="*40)
-        print("🧬 CLINICAL DATA CURATION REPORT")
+        print("CLINICAL DATA CURATION REPORT")
         print("="*40)
         print(f"Total Samples Processed: {self.total}")
         print(f"Total 'Gold' Samples:    {self.passed} (Yield: {self.passed/self.total*100:.1f}%)")
@@ -34,8 +33,7 @@ class CurationStats:
 def curate_sample(row, stats):
     stats.total += 1
 
-    # --- 1. Correctness Gate ---
-    # We look for Trinity's final answer and compare it to the MedQA ground truth
+    # correctness gate 
     content = row.get('content', '')
     match = re.search(r"Therefore, the correct answer is ([A-D])", content)
 
@@ -48,23 +46,20 @@ def curate_sample(row, stats):
         stats.rejections['Wrong Answer'] += 1
         return None
 
-    # --- 2. Clinical Entity Density ---
-    # Reasoning is "shallow" if it doesn't mention enough medical terms
+    # reasoning is shallow if it doesn't mention enough medical terms
     doc = nlp(content)
     unique_entities = set([ent.text.lower() for ent in doc.ents])
     if len(unique_entities) < 5:
         stats.rejections['Low Clinical Density'] += 1
         return None
 
-    # --- 3. Differential Reasoning Check ---
-    # Senior-level logic must rule out distractors
+    # for expert-level logic, ensure differentials are considered
     differential_keywords = ['incorrect', 'rule out', 'distinguish', 'unlike', 'whereas']
     if not any(word in content.lower() for word in differential_keywords):
         stats.rejections['No Differential Logic'] += 1
         return None
 
-    # --- 4. Length / Depth Check ---
-    # Brief answers are usually not helpful for fine-tuning reasoning
+    # brief answers are usually not helpful
     word_count = len(content.split())
     if word_count < 150:
         stats.rejections['Too Brief'] += 1

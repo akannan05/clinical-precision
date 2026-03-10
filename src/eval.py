@@ -9,7 +9,7 @@ from datasets import load_dataset
 BASE_MODEL = "Qwen/Qwen2.5-3B-Instruct"
 GOLD_PATH = "./models/qwen-3b-clinical-gold"
 RAW_PATH = "./models/qwen-3b-clinical-raw"
-TEST_SIZE = 50 # Start with 50 to save time/API costs
+TEST_SIZE = 50 
 
 def get_model(adapter_path):
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
@@ -33,7 +33,6 @@ def run_eval():
 
     results = []
 
-    # 1. Evaluate GOLD
     print("Evaluating GOLD model...")
     model, tokenizer = get_model(GOLD_PATH)
     for row in tqdm(test_ds):
@@ -44,7 +43,6 @@ def run_eval():
     del model
     torch.cuda.empty_cache()
 
-    # 2. Evaluate RAW
     print("Evaluating RAW model...")
     model, tokenizer = get_model(RAW_PATH)
     for i, row in enumerate(tqdm(test_ds)):
@@ -53,7 +51,7 @@ def run_eval():
 
     with open("results/eval_comparison.json", "w") as f:
         json.dump(results, f, indent=2)
-    print("✅ Inference complete. Results saved to results/eval_comparison.json")
+    print("Inference complete. Results saved to results/eval_comparison.json")
 
 if __name__ == "__main__":
     run_eval()

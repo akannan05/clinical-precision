@@ -76,14 +76,14 @@ def main():
         final_report.append(item)
 
         print(f"[{i+1}/{len(data)}] Winner: {winner} | Reason: {item['judge_reason']}")
-        time.sleep(1) # Respect free tier rate limits
+        time.sleep(1) 
 
-    # Save final analysis
+    # final analysis
     with open("results/final_report.json", "w") as f:
         json.dump({"stats": stats, "results": final_report}, f, indent=2)
 
     print("\n" + "="*30)
-    print("🏆 FINAL EVALUATION SUMMARY")
+    print("FINAL EVALUATION SUMMARY")
     print("="*30)
     print(f"Gold Model Wins: {stats['A']}")
     print(f"Raw Model Wins:  {stats['B']}")

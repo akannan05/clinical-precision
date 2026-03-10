@@ -14,9 +14,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- CONFIGURATION ---
 MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"
-# TOGGLE THESE FOR YOUR TWO RUNS:
+
 # 1. Run Gold: DATA_PATH="data/processed/curated_reasoning.jsonl", RUN_NAME="qwen-3b-gold"
 # 2. Run Raw:  DATA_PATH="data/processed/raw_train.jsonl", RUN_NAME="qwen-3b-raw"
 DATA_PATH = "data/processed/raw_train.jsonl"
@@ -24,7 +23,6 @@ RUN_NAME = "qwen-3b-clinical-raw"
 OUTPUT_DIR = f"./models/{RUN_NAME}"
 
 def train():
-    # 1. Initialize WandB
     wandb.init(
         project="clinical-precision-3b",
         name=RUN_NAME,
@@ -37,7 +35,6 @@ def train():
         }
     )
 
-    # 2. BitsAndBytes Config (Crucial for 8GB VRAM)
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
@@ -45,7 +42,6 @@ def train():
         bnb_4bit_use_double_quant=False,
     )
 
-    # 3. Load Model & Tokenizer
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
@@ -58,7 +54,6 @@ def train():
         trust_remote_code=True
     )
 
-    # 4. LoRA Config
     peft_config = LoraConfig(
         r=16,
         lora_alpha=32,
@@ -68,7 +63,6 @@ def train():
         task_type="CAUSAL_LM",
     )
 
-    # 5. Formatting for Qwen Chat Template
     def format_prompt(sample):
         # Using Qwen's ChatML-style format
         text = f"<|im_start|>system\nYou are a clinical reasoning assistant.<|im_end|>\n"
@@ -79,7 +73,6 @@ def train():
     dataset = load_dataset("json", data_files=DATA_PATH, split="train")
     dataset = dataset.map(format_prompt)
 
-    # 6. Training Configuration (Using the exact fields from your class definition)
     sft_config = SFTConfig(
         output_dir=OUTPUT_DIR,
         max_length=768,                # Changed from max_seq_length to max_length
@@ -98,7 +91,6 @@ def train():
         gradient_checkpointing=True,
     )
 
-    # 7. Start Training
     trainer = SFTTrainer(
         model=model,
         train_dataset=dataset,
